@@ -42,7 +42,7 @@ func readInput(filename string) ([][]int, error) {
 // 0 = unknown
 // -1 = decreasing
 // 1 = increasing
-func safeRow(row []int, buffer, state int) bool {
+func safeRow(row []int, state int) bool {
 	if len(row) < 2 {
 		return true
 	}
@@ -61,19 +61,35 @@ func safeRow(row []int, buffer, state int) bool {
 	}
 	// increasing val must be negative
 	if state == 1 && val < 0 && val > -4 {
-		return safeRow(row[1:], buffer, state)
+		return safeRow(row[1:], state)
 		// decreasing val must be positive
 	} else if state == -1 && val > 0 && val < 4 {
-		return safeRow(row[1:], buffer, state)
+		return safeRow(row[1:], state)
 	}
 	return false
+}
+
+func remove(slice []int, i int) []int {
+	return append(slice[:i], slice[i+1:]...)
 }
 
 func part1(rows [][]int) int {
 	sum := 0
 	for _, row := range rows {
-		if safeRow(row, 0, 0) {
+		if safeRow(row, 0) {
 			sum++
+		} else {
+			for i := 0; i < len(row); i++ {
+				// Copy the slice.
+				// This is necessary because we're going to modify the slice.
+				rowCopy := make([]int, len(row))
+				copy(rowCopy, row)
+				rowCopy = remove(rowCopy, i)
+				if safeRow(rowCopy, 0) {
+					sum++
+					break
+				}
+			}
 		}
 	}
 	return sum
