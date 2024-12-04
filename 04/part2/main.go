@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 )
 
 type Node struct {
@@ -11,54 +10,70 @@ type Node struct {
 	Next []*Node
 }
 
-const XMAS string = "XMAS"
+const (
+	XMASA string = "M.S..M.S"
+	XMASB string = "S.M..S.M"
+	XMASC string = "M.M..S.S"
+	XMASD string = "S.S..M.M"
+)
 
-func countXMAS(node *Node, dir int, seen string, debug bool) int {
+func countXMAS(node *Node, debug bool) int {
 	if debug {
-		fmt.Printf("\tseen: %v\n", seen)
-		fmt.Printf("\tval: %v\n", string(node.Val))
-		fmt.Printf("\tdir: %v\n", dir)
+		fmt.Printf("\tval: %v\n\t\"", string(node.Val))
 	}
-	if seen+string(node.Val) == "XMAS" {
-		fmt.Printf("\t\tDING!\n")
-		fmt.Printf("dir: %v\n", dir)
-		R := node.Next[4]
-		L := node.Next[3]
-		if L != nil {
-			fmt.Printf("L: %s\t", string(L.Val))
+	matchA := true
+	matchB := true
+	matchC := true
+	matchD := true
+	for i := 0; i < len(node.Next); i++ {
+		if XMASA[i] == '.' {
+			continue
 		}
-		if R != nil {
-			fmt.Printf("R: %s\n", string(R.Val))
+		if node.Next[i] == nil {
+			if debug {
+				fmt.Printf(" ")
+			}
+			return 0
 		}
-		fmt.Println("")
+		if debug {
+			fmt.Printf("%s", string(node.Next[i].Val))
+		}
+		if rune(XMASA[i]) != node.Next[i].Val {
+			if debug && matchA {
+				fmt.Printf("*")
+			}
+			matchA = false
+		}
+		if rune(XMASB[i]) != node.Next[i].Val {
+			if debug && matchB {
+				fmt.Printf("~")
+			}
+			matchB = false
+		}
+		if rune(XMASC[i]) != node.Next[i].Val {
+			if debug && matchC {
+				fmt.Printf("@")
+			}
+			matchC = false
+		}
+		if rune(XMASD[i]) != node.Next[i].Val {
+			if debug && matchD {
+				fmt.Printf("$")
+			}
+			matchD = false
+		}
+	}
+	if debug {
+		fmt.Printf("\"")
+		if matchA || matchB || matchC || matchD {
+			fmt.Printf(" MATCH")
+		}
+		fmt.Printf("\n\n")
+	}
+	if matchA || matchB || matchC || matchD {
 		return 1
 	}
-	next := seen + string(node.Val)
-	if strings.Index(next, XMAS[0:len(next)]) == -1 {
-		if debug {
-			fmt.Println("\tnope.")
-		}
-		return 0
-	}
-	count := 0
-	nextLetter := XMAS[len(next)]
-	if debug {
-		fmt.Printf("\tnextLetter: %v\n", string(nextLetter))
-	}
-	opt := node.Next[dir]
-	if opt == nil {
-		return 0
-	}
-	if debug {
-		fmt.Printf("\topt: %s\n", string(opt.Val))
-	}
-	if opt.Val == rune(nextLetter) {
-		if debug {
-			fmt.Printf("\t\tRECURSE: %s\n", seen+string(node.Val))
-		}
-		count += countXMAS(opt, dir, seen+string(node.Val), debug)
-	}
-	return count
+	return 0
 }
 
 func BuildGraph(content string) [][]*Node {
@@ -120,12 +135,10 @@ func main() {
 	for i := 0; i < len(rows); i++ {
 		for j := 0; j < len(rows[i]); j++ {
 			fmt.Printf("i: %d j: %d\t\t%s\n", i, j, string(rows[i][j].Val))
-			for dir := 0; dir < 8; dir++ {
-				debug := false
-				if string(rows[i][j].Val) == "X" {
-					debug = false
-				}
-				count += countXMAS(rows[i][j], dir, "", debug)
+			debug := false
+			if string(rows[i][j].Val) == "A" {
+				debug = true
+				count += countXMAS(rows[i][j], debug)
 			}
 		}
 		fmt.Println("")
