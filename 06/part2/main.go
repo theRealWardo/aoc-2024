@@ -56,53 +56,30 @@ type Node struct {
 	Next         []*Node
 }
 
-func IsLoop(start *Node, node *Node, dir int) bool {
-	if node == start {
-		return true
+func Walk(node *Node, dir int, visit bool) bool {
+	if visit {
+		node.Visited = true
 	}
 	if node.Next[dir] == nil {
-		return false
-	}
-	if node.LoopCheck[dir] && node.Next[dir].LoopCheck[dir] {
 		return true
 	}
-	if node.Next[dir].Val == '#' || node.Next[dir].FakeObstacle {
+	if node.LoopCheck[dir] {
+		return false
+	}
+	if node.Next[dir].Val == '#' {
 		turn := dir + 1
 		if turn > 3 {
 			turn = 0
 		}
 		node.LoopCheck[dir] = true
-		result := IsLoop(start, node, turn)
+		result := Walk(node, turn, visit)
 		node.LoopCheck[dir] = false
 		return result
 	}
 	node.LoopCheck[dir] = true
-	result := IsLoop(start, node.Next[dir], dir)
+	result := Walk(node.Next[dir], dir, visit)
 	node.LoopCheck[dir] = false
 	return result
-}
-
-func Walk(node *Node, dir int) int {
-	node.Visited = true
-	if node.Next[dir] == nil {
-		return 0
-	}
-	turn := dir + 1
-	if turn > 3 {
-		turn = 0
-	}
-	crossing := 0
-	node.Next[dir].FakeObstacle = true
-	if node.Next[turn] != nil && IsLoop(node, node.Next[turn], turn) {
-		// You can put an obstacle in front of me and I shall get stuck.
-		node.Next[dir].Loopable = true
-		crossing = 1
-	}
-	node.Next[dir].FakeObstacle = false
-	if node.Next[dir].Val == '#' {
-		return crossing + Walk(node, turn)
-	}
-	return crossing + Walk(node.Next[dir], dir)
 }
 
 func main() {
@@ -114,14 +91,34 @@ func main() {
 	rows := BuildGraph(string(content))
 
 	obstacleOpts := 0
+	startI := 0
+	startJ := 0
+
 	for i := 0; i < len(rows); i++ {
 		for j := 0; j < len(rows[i]); j++ {
-			// Starting node.
 			if rows[i][j].Val == '^' {
 				// 0 = up, 1 = right, 2 = down, 3 = left
-				obstacleOpts = Walk(rows[i][j], 0)
+				Walk(rows[i][j], 0, true)
+				startI = i
+				startJ = j
 				break
 			}
+		}
+	}
+
+	for k := 0; k < len(rows); k++ {
+		for l := 0; l < len(rows[k]); l++ {
+			// if [k][l] was visited, make it a fake obstacle.
+			node := rows[k][l]
+			oldVal := node.Val
+			if node.Visited && node.Val == '.' {
+				node.Val = '#'
+			}
+			if !Walk(rows[startI][startJ], 0, false) {
+				node.Loopable = true
+				obstacleOpts++
+			}
+			node.Val = oldVal
 		}
 	}
 
