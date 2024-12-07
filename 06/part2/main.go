@@ -5,15 +5,6 @@ import (
 	"os"
 )
 
-type Node struct {
-	Val          rune
-	Visited      bool
-	Loopable     bool
-	FakeObstacle bool
-	LoopCheck    bool
-	Next         []*Node // [0]=top, [1]=right, [2]=bottom, [3]=left
-}
-
 // Rest of imports and constants remain the same
 func BuildGraph(content string) [][]*Node {
 	rows := [][]*Node{}
@@ -24,7 +15,12 @@ func BuildGraph(content string) [][]*Node {
 			row++
 			rows = append(rows, []*Node{})
 		} else {
-			rows[row] = append(rows[row], &Node{Val: rune(content[i]), Next: make([]*Node, 4), Visited: false})
+			rows[row] = append(rows[row], &Node{
+				Val:       rune(content[i]),
+				Next:      make([]*Node, 4),
+				Visited:   false,
+				LoopCheck: make([]bool, 4),
+			})
 		}
 	}
 
@@ -51,6 +47,15 @@ func BuildGraph(content string) [][]*Node {
 	return rows
 }
 
+type Node struct {
+	Val          rune
+	Visited      bool
+	Loopable     bool
+	FakeObstacle bool
+	LoopCheck    []bool // Track all directions
+	Next         []*Node
+}
+
 func IsLoop(start *Node, node *Node, dir int) bool {
 	if node == start {
 		return true
@@ -58,7 +63,7 @@ func IsLoop(start *Node, node *Node, dir int) bool {
 	if node.Next[dir] == nil {
 		return false
 	}
-	if node.LoopCheck && node.Next[dir].LoopCheck {
+	if node.LoopCheck[dir] && node.Next[dir].LoopCheck[dir] {
 		return true
 	}
 	if node.Next[dir].Val == '#' || node.Next[dir].FakeObstacle {
@@ -66,14 +71,14 @@ func IsLoop(start *Node, node *Node, dir int) bool {
 		if turn > 3 {
 			turn = 0
 		}
-		node.LoopCheck = true
+		node.LoopCheck[dir] = true
 		result := IsLoop(start, node, turn)
-		node.LoopCheck = false
+		node.LoopCheck[dir] = false
 		return result
 	}
-	node.LoopCheck = true
+	node.LoopCheck[dir] = true
 	result := IsLoop(start, node.Next[dir], dir)
-	node.LoopCheck = false
+	node.LoopCheck[dir] = false
 	return result
 }
 
