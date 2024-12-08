@@ -80,6 +80,12 @@ func possibleResult(total int, target int, start *Node) bool {
 				if possibleResult(total*next.Next[0].IntVal, target, next.Next[0]) {
 					return true
 				}
+			case ".":
+				r := fmt.Sprintf("%d%d", total, next.Next[0].IntVal)
+				nextInt, _ := strconv.Atoi(r)
+				if possibleResult(nextInt, target, next.Next[0]) {
+					return true
+				}
 			}
 		}
 	}
@@ -104,7 +110,7 @@ func main() {
 			add := NewOperatorNode(("+"))
 			add.Next = append(add.Next, node)
 			concat := NewOperatorNode(("."))
-			add.Next = append(concat.Next, node)
+			concat.Next = append(concat.Next, node)
 			next.Next = append(next.Next, mul, add, concat)
 			next = node
 		}
